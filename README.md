@@ -75,7 +75,7 @@ Python函数传递参数时,函数自动复制一份引用,函数作用域外的
     其次,生成器对象只可迭代一次,不可重复调用
 ####yield关键字
     其用法和return类似
-    ```Python
+    ```py
     >>> def createGenerator():
     ...     my_list = range(3)
     ...     for i in my_list:
