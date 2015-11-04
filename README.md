@@ -52,4 +52,46 @@ Python函数传递参数时,函数自动复制一份引用,函数作用域外的
     "kkkkk{0}".format((1,2))
     'kkkkk(1, 2)'
 
-##
+##生成器与迭代器
+####首先,迭代器对象.
+    >>> myiterator = [x*x for x in range(1,4)]
+    >>> for i in myiterator:
+    ...     print i
+    ... 
+    1
+    4
+    9
+    可迭代对象必须先放到内存中,然后才可随意调用.但如果它们数据量过大,就会消耗太多的内存.
+####生成器对象是一种特殊的迭代器对象.
+    生成器是一个带yield关键字的函数,这里说的是生成器对象.
+    创建生成器对象时用()代替[],
+    >>> mygenerator = (x*x for x in range(1,4))
+    >>> for i in mygenerator:
+    ...     print i
+    ... 
+    1
+    4
+    9
+    其次,生成器对象只可迭代一次,不可重复调用
+####yield关键字
+    其用法和return类似
+    ```Python
+    >>> def createGenerator():
+    ...     my_list = range(3)
+    ...     for i in my_list:
+    ...         yield i*i
+    ... 
+    >>> myGenerator = createGenerator()
+    >>> print myGenerator
+    <generator object createGenerator at 0x7fec5da8dbe0>
+    >>> for i in myGenerator:
+    ...     print i
+    ... 
+    0
+    1
+    4
+    ```
+    调用createGenerator函数时,函数内部的代码并没有运行,函数仅仅返回了一个生成器对象.
+    当for循环第一次调用生成器对象myGenerator时,createGenerator函数里的代码开始执行,直到遇到yield关键字,返回本次循环的返回值.
+    以后,每次循环返回一个该循环的返回值,直到没有返回值.
+    
