@@ -6,8 +6,10 @@
 所有变量都可以理解为对内存中的一个对象的"引用".类型不是属于变量的,而是属于对象的.对象有两种:
 #### 一种是不可变对象:
 > 如字符串,元组,数值
+
 #### 一种是可变对象:
 > 如列表,字典
+
 Python函数传递参数时,函数自动复制一份引用,函数作用域外的引用便与复制后的引用没有关系了.当传递的是不可变对象的引用时,函数内部对它的操作不会影响内存中对象的值;但当传递的是可变对象的引用时,函数内部对它的操作就和定了位的指针一样,即在内存中修改了它的值.
 
 # Python的三类方法
@@ -133,12 +135,78 @@ AOP有两个好处,首先程序员在编写时只需关心核心业务逻辑;其
     
     getMessage("yangbo")
     
-另外,Python有几个自带的装饰器,比如property, staticmethod, classmethod等.更多关于Python装饰器,请点[这里](http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python)
+另外,Python有几个自带的装饰器,比如property, staticmethod, classmethod等.更多关于Python装饰器,可以参考[这里](http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python)
 
 # Duck Typing, 鸭子类型
 > 如果行为像鸭子,那么不管它是什么,就把它看做鸭子.根本不考虑一个对象属于什么类,只关心它有什么样的行为(它有哪些方法),这就是Duck Typing.
-鸭子类型是动态语言的一种风格.提出这个概念的是大名鼎鼎的专家程序员Dave Thomas.--*松本行弘的程序世界*
+鸭子类型是动态语言的一种风格.提出这个概念的是大名鼎鼎的专家程序员Dave Thomas.  --*松本行弘的程序世界*
 
-这篇博文是对鸭子类型的思考,可以参考.[鸭子类型:一切都是为了复用](http://blog.csdn.net/xiammy/article/details/1457135)
+这篇博文是对鸭子类型的思考,可以参考[鸭子类型:一切都是为了复用](http://blog.csdn.net/xiammy/article/details/1457135)
 
+# Python函数重载
+函数重载主要解决的两个问题.
+
+1. 可变参数类型.
+2. 可变参数个数.
+
+另外,有一个基本的设计原则,仅仅当两个函数除了参数类型和参数个数不同以外,其功能完全相同时,才使用函数重载,如果函数功能不同,则不应该使用重载,而是写一个新的函数.
+
+对于情况 1, 参数类型不同.由于Python的函数可以接受任何类型的参数,如果函数的功能相同,不同参数类型在Python中很可能对应相同的代码,所以没有必要区别对待.
+
+对于情况 2, 参数个数不同.处理方法是 默认参数,假设函数功能相同,默认的参数一定会用到.
+
+综上,Python不需要函数重载.
+
+# 新式类与旧式类
+Python2.2引入descriptor,基于这个功能实现了新式类的对象模型,同时解决了经典类系统中出现的多重继承的MRO(Method Resolution Order)的问题.
+
+更多关于MRO.[MRO&super](http://blog.csdn.net/seizef/article/details/5310107)
+
+# __new__和__init__的区别
+
+1. __new__ 是一个静态方法, 而__init__是一个实例方法.
+2. __new__会返回一个创建的实例,而__init__什么都不返回.
+3. 只有在__new__返回一个cls的实例时,后面的__init__才能被调用.
+4. 当创建一个新实例时调用__new__方法, 初始化实例时调用__init__.
+
+# 元类
+> “元类就是深度的魔法，99%的用户应该根本不必为此操心。如果你想搞清楚究竟是否需要用到元类，那么你就不需要它。那些实际用到元类的人都非常清楚地知道他们需要做什么，而且根本不需要解释为什么要用元类。”  —— Python界的领袖 Tim Peters
+
+元类很复杂,但还是先做一点简单的了解.
+在Python中,可以用type函数动态创建类,其实,所有类的创建,都是通过扫描class关键字下的语法,背后的都是由type函数实现的.
+       
+    def getName(self):
+        print self.name
+        
+    My_class = type('My_class', (), {'name':'yangbo', 'getName':getName})
     
+    my_instance = My_class()
+    my_instance.getName()   #yangbo
+    
+Python中,一切都是对象,类也是对象,元类就是用来创建类的"类",type就是Python的内建元类.
+
+#### __metaclass__属性
+可以在写一个类时添加一个__metaclass__属性,
+    
+    class My_class():
+        __metaclass__ = something...
+
+此时,类对象My_class还没有在内存中创建,运行这段代码时的过程时,Python解释器会在类的定义中寻找__metaclass__属性,
+如果找到了,Python解释器就会用它来创建类My_class,如果没有找到,它会继续在父类中寻找,并尝试之前的操作,如果在所有父类中都无法找到__metaclass__属性,
+它就会在模块层次中去寻找,并尝试同样的操作,如果还是找不到,它就会用内建元类type来创建这个类对象.
+
+所以,我们在__metaclass__中就可以放置能创建一个类的东西.什么事可以创建一个类的东西?type,或者任何用到type或者子泪花type的东西,都可以.
+
+使用到元类的代码比较复杂,但就元类本身而言,其实是很简单的:
+    
+    1. 拦截类的创建.
+    2. 修改类.
+    3. 返回修改之后的类.
+    
+参考:
+
+1. [stack overflow](http://stackoverflow.com/questions/100003/what-is-a-metaclass-in-python)
+
+2. [中文版](http://blog.jobbole.com/21351/)
+
+# 单例模式
