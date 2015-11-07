@@ -93,12 +93,14 @@ Python函数传递参数时,函数自动复制一份引用,函数作用域外的
         0
         1
         4
-        
+
 调用createGenerator函数时,函数内部的代码并没有运行,函数仅仅返回了一个生成器对象.
 
 当for循环第一次调用生成器对象myGenerator时,createGenerator函数里的代码开始执行,直到遇到yield关键字,返回本次循环的返回值.
 
 以后,每次循环返回一个该循环的返回值,直到没有返回值.
+
+更多参考:[Python yield 使用浅析](http://www.ibm.com/developerworks/cn/opensource/os-cn-python-yield/)
     
 # 面向切面编程和装饰器
 #### AOP面向切面编程
@@ -287,3 +289,76 @@ Python中的模块module在程序中只被加载一次,它是天然的单例模�
 参考:http://blog.csdn.net/ghostfromheaven/article/details/7671853
 
 # Python中的作用域
+Python是静态作用域语言，尽管它自身是一个动态语言。也就是说，在Python中,变量的作用域是由它在源代码中的位置决定的.
+实际上,只有模块，类以及函数才会引入新的作用域，其它的代码块是不会引入新的作用域的。
+
+Python2.0及以前版本只有三中作用域,在2.1中引入了嵌套作用域,相应的变量查找顺序变为LEGB(即Local, Enclosing, Global, Built-in)
+
+参考:http://www.cnblogs.com/frydsh/archive/2012/08/12/2602100.html
+
+# GIL全局解释器锁
+Global Interpreter Lock, 即Python为了保证线程安全而采取的独立线程运行的限制,也就是说一个CPU核心同一时间只能运行一个线程.
+关于GIL的详细介绍,戳[Python 最难的问题](http://www.jeffknupp.com/blog/2012/03/31/pythons-hardest-problem/)
+
+[中文版](http://www.oschina.net/translate/pythons-hardest-problem)
+
+详细请参考[这里](http://blog.csdn.net/I2Cbus/article/category/2224167)
+
+# 协程(Coroutine)
+参考:[廖雪峰的官方网站](http://www.liaoxuefeng.com/wiki/001374738125095c955c1e6d8bb493182103fac9270762a000/0013868328689835ecd883d910145dfa8227b539725e5ed000)
+
+并发编程目前有四种方式(多进程,多线程,异步,协程)
+
+协程的特点在于是一个线程执行，那和多线程比，协程有何优势？
+
+最大的优势就是协程极高的执行效率。因为子程序切换不是线程切换，而是由程序自身控制，因此，没有线程切换的开销，和多线程比，线程数量越多，协程的性能优势就越明显。
+
+第二大优势就是不需要多线程的锁机制，因为只有一个线程，也不存在同时写变量冲突，在协程中控制共享资源不加锁，只需要判断状态就好了，所以执行效率比多线程高很多。
+
+因为协程是一个线程执行，那怎么利用多核CPU呢？最简单的方法是多进程+协程，既充分利用多核，又充分发挥协程的高效率，可获得极高的性能。
+
+Python对协程的支持还非常有限，用在generator中的yield可以一定程度上实现协程。虽然支持不完全，但已经可以发挥相当大的威力了。
+传统的生产者-消费者模型是一个线程写消息，一个线程取消息，通过锁机制控制队列和等待，但一不小心就可能死锁。
+
+    import time
+    
+    def consumer():
+        r = ''
+        while True:
+            n = yield r
+            if not n:
+                return
+            print('[CONSUMER] Consuming %s...' % n)
+            time.sleep(1)
+            r = '200 OK'
+    
+    def produce(c):
+        c.next()
+        n = 0
+        while n < 5:
+            n = n + 1
+            print('[PRODUCER] Producing %s...' % n)
+            r = c.send(n)
+            print('[PRODUCER] Consumer return: %s' % r)
+        c.close()
+    
+    if __name__=='__main__':
+        c = consumer()
+        produce(c)
+
+注意到consumer函数是一个generator（生成器），把一个consumer传入produce后：
+      
+首先调用c.next()启动生成器；
+      
+然后，一旦生产了东西，通过c.send(n)切换到consumer执行；
+      
+consumer通过yield拿到消息，处理，又通过yield把结果传回；
+      
+produce拿到consumer处理的结果，继续生产下一条消息；
+      
+produce决定不生产了，通过c.close()关闭consumer，整个过程结束。
+      
+整个流程无锁，由一个线程执行，produce和consumer协作完成任务，所以称为“协程”，而非线程的抢占式多任务。
+      
+最后套用Donald Knuth的一句话总结协程的特点: *“子程序就是协程的一种特例。”*
+
