@@ -231,9 +231,9 @@ Python中,一切都是对象,类也是对象,元类就是用来创建类的"类"
     print one.a #9
     print one is two #True
 
-通过\_\_new__方法,将一个类的实例绑定到_instance"属性.
-如果cls._instance为None,说明类还未实例化,故实例化并将其绑定到cls._instance,
-以后每次实例化的时候都返回第一次实例化创建的实例.注:从Singleton派生子类时不要重载\__new\__方法.
+通过\_\_new__方法,将一个类的实例绑定到\_instance"属性.
+如果cls.\_instance为None,说明类还未实例化,故实例化并将其绑定到cls.\_instance,
+以后每次实例化的时候都返回第一次实例化创建的实例.注:从Singleton派生子类时不要重载\_\_new__方法.
 
 ##### 共享属性
 所谓单例就是所有引用(实例,对象)拥有相同的状态(属性)和行为(方法).
